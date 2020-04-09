@@ -212,7 +212,11 @@ VOID SaveToFile(IHTMLDocument2* _pHtmlDoc2, IHTMLDocument3* _pHtmlDoc3, IHTMLDoc
 		V_I4(&varIndex) = 0;
 		IDispatch* dispItem;
 		_pBaseElementCollection->item(varIndex, varIndex, &dispItem);
-		_pBaseElement = (IHTMLBaseElement*)dispItem;
+		//将IHTMLElement类型根元素 转化为 IHTMLBaseElement类型
+		hr = dispItem->QueryInterface(IID_IHTMLBaseElement, (void**)&_pBaseElement);
+		if (hr != S_OK) {
+			MessageBox(NULL, _T("QueryInterface IID_IHTMLBaseElement 失败"), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONINFORMATION);
+		}
 		BSTR tlocationURL;
 		_pBaseElement->get_href(&tlocationURL);
 		if (NULL != tlocationURL) {
@@ -237,7 +241,15 @@ VOID SaveToFile(IHTMLDocument2* _pHtmlDoc2, IHTMLDocument3* _pHtmlDoc3, IHTMLDoc
 		VARIANT varDisplayUrl;
 		V_VT(&varDisplayUrl) = VT_BSTR;
 		V_BSTR(&varDisplayUrl) = locationURL;
-		((IHTMLElement*)dispItem)->setAttribute(SysAllocString(_T("__IE_DisplayURL")), varDisplayUrl, 0);
+		//将IHTMLElement类型根元素 转化为 IHTMLBaseElement类型
+		hr = dispItem->QueryInterface(IID_IHTMLElement, (void**)&_pHtmlElement);
+		if (hr != S_OK) {
+			MessageBox(NULL, _T("QueryInterface IID_IHTMLBaseElement 失败"), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONINFORMATION);
+		}
+		//__IE_DisplayUrl			
+		//Retrieves a string that specifies theURLof the document.
+		//检索一个字符串，该字符串指定文档的URL。
+		_pHtmlElement->setAttribute(SysAllocString(_T("__IE_DisplayURL")), varDisplayUrl, 0);
 		VariantClear(&varIndex);
 		VariantClear(&varDisplayUrl);
 		dispItem->Release();
@@ -419,18 +431,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		VARIANT cvarTemp;
 		SAFEARRAY* sfArray;
 		// Creates a new one-dimensional array
-		sfArray = SafeArrayCreateVector(VT_VARIANT, 0, 1);
-
-		//__IE_DisplayUrl			
-		//Retrieves a string that specifies theURLof the document.
-		//检索一个字符串，该字符串指定文档的URL。
-		//---------------------------------
-		BSTR locationURL;
-		iWebBrowser->get_LocationURL(&locationURL);
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = locationURL;
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_DisplayUrl")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
+		//sfArray = SafeArrayCreateVector(VT_VARIANT, 0, 1);
 
 		//__IE_BaseLineScale		
 		//Retrieves an integer specifying the font size of the print template.
@@ -451,30 +452,120 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//Retrieves a string specifying theURLof a temporary copy of the source document for the print template.	
 		//检索一个字符串，该字符串指定打印模板的源文档的临时副本的URL。
 		//---------------------------------
-		
-
 		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(_T("http://www.baidu.com"));
+		V_BSTR(&cvarTemp) = SysAllocString(FileName);
 		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_ContentDocumentUrl")), cvarTemp, 0);
 		VariantClear(&cvarTemp);
 
-		// set the Header string
+		//__IE_ContentSelectionUrl	
+		//Retrieves a string specifying theURLof a temporary .htm file containing the current selection in the browser.
+		//检索一个字符串，该字符串指定浏览器中包含当前选择的临时.htm文件的URL。
 		//---------------------------------
 		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(_T("Header"));;
+		V_BSTR(&cvarTemp) = SysAllocString(_T(""));
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_ContentSelectionUrl")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+
+		//__IE_HeaderString		
+		//Retrieves a string specifying the header string from thePage Setupdialog box.
+		//从“页面设置”对话框中检索一个用于指定标题字符串的字符串。
+		//---------------------------------
+		V_VT(&cvarTemp) = VT_BSTR;
+		V_BSTR(&cvarTemp) = SysAllocString(_T(""));
 		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_HeaderString")), cvarTemp, 0);
 		VariantClear(&cvarTemp);
 
-		// set the Footer string
+		//__IE_FooterString		
+		//Retrieves a string specifying the footer string from thePage Setupdialog box.
+		//从“页面设置”对话框中检索指定页脚字符串的字符串。
 		//---------------------------------
 		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(_T("Footer"));;
+		V_BSTR(&cvarTemp) = SysAllocString(_T(""));
 		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_FooterString")), cvarTemp, 0);
 		VariantClear(&cvarTemp);
 
+		//__IE_ActiveFrame		
+		//Retrieves the index of the active frame in the frames collection.
+		//检索框架集合中活动框架的索引。
+		//---------------------------------
+		V_VT(&cvarTemp) = VT_I4;
+		V_I4(&cvarTemp) = 0;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_ActiveFrame")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+
+		//__IE_OutlookHeader		
+		//Retrieves a string specifying theMicrosoft Outlookheader string.
+		//检索指定Microsoft Outlookheader字符串的字符串。
+		//---------------------------------
+		V_VT(&cvarTemp) = VT_BSTR;
+		V_BSTR(&cvarTemp) = SysAllocString(_T(""));
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_OutlookHeader")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+
+	//	pEventObj2.setAttribute('__IE_PrinterCMD_Device', FDeviceW, 0);
+	//	pEventObj2.setAttribute('__IE_PrinterCMD_Port', FPortW, 0);
+	//	pEventObj2.setAttribute('__IE_PrinterCMD_Printer', FDriverW, 0);
+	//	pEventObj2.setAttribute('__IE_PrinterCmd_DevMode', FDevModeHandle, 0);
+	//	pEventObj2.setAttribute('__IE_PrinterCmd_DevNames', FDevNamesHandle, 0);
+
+	//	if FPrint then
+	//		pEventObj2.setAttribute('__IE_PrintType', 'NoPrompt', 0)
+	//	else
+	//		pEventObj2.setAttribute('__IE_PrintType', 'Preview', 0);
 		V_VT(&cvarTemp) = VT_BSTR;
 		V_BSTR(&cvarTemp) = SysAllocString(_T("Preview"));
 		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrintType")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+
+		IMoniker* pURLMoniker;
+		BSTR bstrURL = SysAllocString(_T("res://ietest.exe/PT.HTM"));
+		if (!SUCCEEDED(::CreateURLMoniker(NULL, bstrURL, &pURLMoniker))) {
+			MessageBox(NULL, TEXT("CreateURLMoniker Failed."), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONERROR);
+			break;
+		}
+		//__IE_TemplateUrl		
+		//Retrieves a string specifying theURLof the print template.
+		//检索一个字符串，该字符串指定打印模板的URL。
+		V_VT(&cvarTemp) = VT_BSTR;
+		V_BSTR(&cvarTemp) = bstrURL;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_TemplateUrl")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+
+		//__IE_uPrintFlags		
+		//Retrieves a print flag value.
+		//检索打印标志值。
+		//---------------------------------
+		V_VT(&cvarTemp) = VT_I4;
+		V_I4(&cvarTemp) = 0;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_uPrintFlags")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+
+	//v: = VarArrayOf([FShortFileName]);
+	//	pEventObj2.setAttribute('__IE_TemporaryFiles', v, 0);
+		//__IE_TemporaryFiles		
+		//Retrieves a reference to a list of temporary file names saved from this document.
+		//检索对从此文档保存的临时文件名列表的引用。
+		V_VT(&cvarTemp) = VT_ARRAY;
+		V_ARRAY(&cvarTemp) = SafeArrayCreateVector
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_TemporaryFiles")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+
+		//__IE_ParentHWND
+		//---------------------------------
+		V_VT(&cvarTemp) = VT_I4;
+		V_I4(&cvarTemp) = 0;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_ParentHWND")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+
+		//__IE_DisplayUrl			
+		//Retrieves a string that specifies theURLof the document.
+		//检索一个字符串，该字符串指定文档的URL。
+		//---------------------------------
+		BSTR locationURL;
+		iWebBrowser->get_LocationURL(&locationURL);
+		V_VT(&cvarTemp) = VT_BSTR;
+		V_BSTR(&cvarTemp) = locationURL;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_DisplayUrl")), cvarTemp, 0);
 		VariantClear(&cvarTemp);
 
 		HANDLE hPrinter = NULL;
@@ -493,26 +584,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (::GetDefaultPrinter(szPrinter, &dwSize))
 			{
 				GetPrinterDevice(szPrinter, &phDevNames, &phDevMode);
-				//::OpenPrinter(szPrinter, &hPrinter, NULL);
-				//::GetPrinter(hPrinter, 2, 0, 0, &dwNeeded);
-				//if (dwNeeded <= 0)
-				//{
-				//	MessageBox(NULL, TEXT("获取打印机信息长度dwNeeded失败，添加打印机消息处理失败"), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONERROR);
-				//	return 0;
-				//}
-				//pPrinterInfo = new PRINTER_INFO_2[dwNeeded];
-				//if (!::GetPrinter(hPrinter, 2, (LPBYTE)pPrinterInfo, dwNeeded, &dwNeeded))
-				//{
-				//	DWORD dError = GetLastError();
-				//	MessageBox(NULL, TEXT("获取打印信息失败，错误代码：，添加打印机消息处理失败"), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONERROR);
-				//	return 0;
-				//}
-				//::ClosePrinter(hPrinter);
-				//delete[]pPrinterInfo;
-				////GetLandscapeDevMode(hWndWindow, szPrinter);
-				////::DocumentProperties(0, m_hPrinter, szPrinter, NULL, NULL, 0);
-				////::GetPrinter(m_hPrinter, 2, (LPBYTE)pPrinterInfo, dwNeeded, &dwNeeded);
-
 			}
 		}
 		V_VT(&cvarTemp) = VT_BSTR;
@@ -538,13 +609,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		VariantInit(&varArgs);
 		V_VT(&varArgs) = VT_UNKNOWN;
 		V_UNKNOWN(&varArgs) = _pHtmlEvent2;
-
-		IMoniker* pURLMoniker;
-		BSTR bstrURL = SysAllocString(_T("res://ietest.exe/PT.HTM"));
-		if (!SUCCEEDED(::CreateURLMoniker(NULL, bstrURL, &pURLMoniker))) {
-			MessageBox(NULL, TEXT("CreateURLMoniker Failed."), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONERROR);
-			break;
-		}
 
 		TCHAR    szTemp[MAX_PATH * 2];
 

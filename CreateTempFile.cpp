@@ -20,7 +20,7 @@ VOID GetTempHtmlFileName(TCHAR* szTempFileName) {
 
     //取得临时文件名 
     uRetVal = GetTempFileName(lpTempPathBuffer, // directory for tmp files
-        TEXT("TopTP"),     // temp file name prefix 
+        TEXT("ZXB"),     // temp file name prefix 
         0,                // create unique name 
         szTempFileName);  // buffer for name 
     if (uRetVal == 0)

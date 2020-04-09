@@ -2,7 +2,7 @@
 
 #define BUFSIZE 1024
 
-void PrintError(LPCTSTR errDesc);
+//void PrintError(LPCTSTR errDesc);
 VOID CreateTempFile(TCHAR* szFileContent, TCHAR* szTempFileName);
 VOID GetTempHtmlFileName(TCHAR* szTempFileName);
 HANDLE CreateTempHtmlFile(TCHAR* szTempFileName);

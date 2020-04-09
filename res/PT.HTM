@@ -305,7 +305,8 @@
 			document.body.onkeypress = OnKeyPress;
 			document.body.onkeydown = OnKeyDown;
 		}
-		function OnLoadBody() {
+        function OnLoadBody() {
+            alert(dialogArguments.Sanpo_Var);
 			g_fRTL = (document.body.currentStyle.direction.toLowerCase() == "rtl");
 			g_fPreview = dialogArguments.__IE_PrintType
 			if (UnprintableURL(dialogArguments.__IE_ContentDocumentUrl)) {

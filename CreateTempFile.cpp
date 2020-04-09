@@ -14,7 +14,7 @@ VOID GetTempHtmlFileName(TCHAR* szTempFileName) {
         lpTempPathBuffer); // buffer for path  
     if (dwRetVal > MAX_PATH || (dwRetVal == 0))
     {
-        PrintError(TEXT("GetTempPath failed"));
+        //PrintError(TEXT("GetTempPath failed"));
         return;
     }
 
@@ -25,7 +25,7 @@ VOID GetTempHtmlFileName(TCHAR* szTempFileName) {
         szTempFileName);  // buffer for name 
     if (uRetVal == 0)
     {
-        PrintError(TEXT("GetTempFileName failed"));
+        //PrintError(TEXT("GetTempFileName failed"));
         return;
     }
 }
@@ -43,7 +43,7 @@ HANDLE CreateTempHtmlFile(TCHAR* szTempFileName) {
         NULL);                 // 模板文件为空。
     if (hTempFile == INVALID_HANDLE_VALUE)
     {
-        PrintError(TEXT("Second CreateFile failed"));
+        //PrintError(TEXT("Second CreateFile failed"));
     }
     return hTempFile;
 }
@@ -65,14 +65,14 @@ VOID WriteTempHtmlFile(HANDLE hTempFile, TCHAR* szFileContent) {
         NULL);
     if (!fSuccess)
     {
-        PrintError(TEXT("WriteFile failed"));
+        //PrintError(TEXT("WriteFile failed"));
         return;
     }
     free(utf8);
     SetEndOfFile(hTempFile);
     if (!CloseHandle(hTempFile))
     {
-        PrintError(TEXT("CloseHandle(hTempFile) failed"));
+        //PrintError(TEXT("CloseHandle(hTempFile) failed"));
         return;
     }
 }
@@ -88,18 +88,14 @@ VOID CreateTempFile(TCHAR* szTempFileName, TCHAR* szFileContent) {
     DWORD dwBytesRead = 0;
     DWORD dwBytesWritten = 0;
 
-    //TCHAR szTempFileName[MAX_PATH];
     TCHAR lpTempPathBuffer[MAX_PATH];
-    char  chBuffer[BUFSIZE];
-
-    LPCTSTR errMsg;
 
     //取得临时路径
     dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
                            lpTempPathBuffer); // buffer for path  
     if (dwRetVal > MAX_PATH || (dwRetVal == 0))
     {
-        PrintError(TEXT("GetTempPath failed"));
+        //PrintError(TEXT("GetTempPath failed"));
         return;
     }
 
@@ -110,7 +106,7 @@ VOID CreateTempFile(TCHAR* szTempFileName, TCHAR* szFileContent) {
                                 szTempFileName);  // buffer for name 
     if (uRetVal == 0)
     {
-        PrintError(TEXT("GetTempFileName failed"));
+        //PrintError(TEXT("GetTempFileName failed"));
         return;
     }
 
@@ -124,7 +120,7 @@ VOID CreateTempFile(TCHAR* szTempFileName, TCHAR* szFileContent) {
                             NULL);                // no template 
     if (hTempFile == INVALID_HANDLE_VALUE)
     {
-        PrintError(TEXT("Second CreateFile failed"));
+        //PrintError(TEXT("Second CreateFile failed"));
         return;
     }
 
@@ -138,7 +134,7 @@ VOID CreateTempFile(TCHAR* szTempFileName, TCHAR* szFileContent) {
                         NULL);
     if (!fSuccess)
     {
-        PrintError(TEXT("WriteFile failed"));
+        //PrintError(TEXT("WriteFile failed"));
         return;
     }
 
@@ -151,36 +147,7 @@ VOID CreateTempFile(TCHAR* szTempFileName, TCHAR* szFileContent) {
 
     if (!CloseHandle(hTempFile))
     {
-        PrintError(TEXT("CloseHandle(hTempFile) failed"));
+        //PrintError(TEXT("CloseHandle(hTempFile) failed"));
         return;
     }
-}
-
-//  ErrorMessage support function.
-//  Retrieves the system error message for the GetLastError() code.
-//  Note: caller must use LocalFree() on the returned LPCTSTR buffer.
-LPCTSTR ErrorMessage(DWORD error)
-{
-    LPVOID lpMsgBuf;
-
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER
-        | FORMAT_MESSAGE_FROM_SYSTEM
-        | FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        error,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR)&lpMsgBuf,
-        0,
-        NULL);
-
-    return((LPCTSTR)lpMsgBuf);
-}
-
-//  PrintError support function.
-//  Simple wrapper function for error output.
-void PrintError(LPCTSTR errDesc)
-{
-    LPCTSTR errMsg = ErrorMessage(GetLastError());
-    _tprintf(TEXT("\n** ERROR ** %s: %s\n"), errDesc, errMsg);
-    LocalFree((LPVOID)errMsg);
 }

@@ -195,8 +195,7 @@
 						fUnprintable = true;
 					break;
 				case 6:
-					if (strLink.substr(0, cIndex) == "telnet"
-						|| strLink.substr(0, cIndex) == "mailto")
+					if (strLink.substr(0, cIndex) == "telnet" || strLink.substr(0, cIndex) == "mailto")
 						fUnprintable = true;
 					break;
 				case 8:
@@ -214,17 +213,13 @@
 			if (event.keyCode == 27) {
 				Close();
 			}
-
 		}
 		function OnKeyDown() {
 			if (event.altKey) {
-
 				switch (event.keyCode) {
-
 					case 69:
 						About();
 						break;
-
 					case 37:
 						ChangeDispPage(g_nDispPage - 1);
 						break;
@@ -306,7 +301,9 @@
 			document.body.onkeydown = OnKeyDown;
 		}
         function OnLoadBody() {
-            alert(dialogArguments.Sanpo_Var);
+			//alert(dialogArguments.Sanpo_DevMode);
+            alert(dialogArguments.__IE_PrinterCmd_DevMode);
+            alert(dialogArguments.__IE_PrinterCmd_DevNames);
 			g_fRTL = (document.body.currentStyle.direction.toLowerCase() == "rtl");
 			g_fPreview = dialogArguments.__IE_PrintType
 			if (UnprintableURL(dialogArguments.__IE_ContentDocumentUrl)) {
@@ -327,12 +324,11 @@
 			prev.base = "PREV";//str.slice(str.lastIndexOf("/")+1,str.indexOf("_"));
 
 			var zoomValue = "75";
-			//if (typeof document.all.oPrintCtl.zoomValue=="undefined"){
-			//	zoomValue="75";
-			//}
-			//else if (document.all.oPrintCtl.zoomValue!=""){
-			//	zoomValue=document.all.oPrintCtl.zoomValue;
-			//}
+            if (typeof dialogArguments.__Custom_Parameter_zoomValue=="undefined"){
+				zoomValue="75";
+            } else if (dialogArguments.__Custom_Parameter_zoomValue!=""){
+                zoomValue = dialogArguments.__Custom_Parameter_zoomValue;
+			}
 			selectZoom.value = zoomValue;
 			ChangeZoom(parseInt(zoomValue));
 
@@ -373,14 +369,14 @@
 
 
 		function ReceiveParameter() {
-			//if (document.all.oPrintCtl.copies>0)
-			//	Printer.copies = document.all.oPrintCtl.copies;
-			//Printer.selectedPages = document.all.oPrintCtl.selectedPages;
-			//Printer.currentPage = document.all.oPrintCtl.currentPage;
-			//if (parseInt(document.all.oPrintCtl.pageFrom)>0)
-			//	Printer.pageFrom = parseInt(document.all.oPrintCtl.pageFrom);
-			//if (parseInt(document.all.oPrintCtl.pageTo)>0)
-			//	Printer.pageTo = parseInt(document.all.oPrintCtl.pageTo);
+            if (dialogArguments.__Custom_Parameter_copies>0)
+                Printer.copies = dialogArguments.__Custom_Parameter_copies;
+            Printer.selectedPages = dialogArguments.__Custom_Parameter_selectedPages;
+            Printer.currentPage = dialogArguments.__Custom_Parameter_currentPage;
+            if (parseInt(dialogArguments.__Custom_Parameter_pageFrom)>0)
+                Printer.pageFrom = parseInt(dialogArguments.__Custom_Parameter_pageFrom);
+            if (parseInt(dialogArguments.__Custom_Parameter_pageTo)>0)
+                Printer.pageTo = parseInt(dialogArguments.__Custom_Parameter_pageTo);
 		}
 		function BuildAllFramesComplete() {
 			;
@@ -1336,7 +1332,11 @@
 			}
 		}
 		function CPrintDoc_InitDocument(fUseStreamHeader) {
-			var fReallyUseStreamHeader = (fUseStreamHeader && (dialogArguments.__IE_OutlookHeader != null));
+			alert(fUseStreamHeader);
+            alert(dialogArguments.__IE_OutlookHeader != null);
+            var fReallyUseStreamHeader = (fUseStreamHeader && (dialogArguments.__IE_OutlookHeader != null) && (dialogArguments.__IE_OutlookHeader != ""));
+            alert(fReallyUseStreamHeader);
+            alert((fReallyUseStreamHeader) ? 1 : 0);
 			this._anMerge[1] = (fReallyUseStreamHeader) ? 1 : 0;
 			this._nStatus = (fReallyUseStreamHeader) ? 0 : 1;
 			this.AddFirstPage();

@@ -374,7 +374,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hWndWebBrower = WinContainer.Create(hWnd, rc, 0, WS_CHILD | WS_VISIBLE);
 		WinContainer.CreateControl(pszName);
 		WinContainer.QueryControl(__uuidof(IWebBrowser2), (void**)&iWebBrowser);
-		hWndEditUrl = CreateWindow(_T("edit"), _T("http://www.baidu.com"), WS_CHILD | WS_VISIBLE | WS_BORDER, 10, rc.bottom - 50, 800, 40, hWnd, NULL, NULL, NULL);
+		hWndEditUrl = CreateWindow(_T("edit"), _T("file:///F:/WorkSpace/visualStudio/vc/ietest-2004091630/resouce/pagesource.html"), WS_CHILD | WS_VISIBLE | WS_BORDER, 10, rc.bottom - 50, 800, 40, hWnd, NULL, NULL, NULL);
 		hWndBtnGo = CreateWindow(_T("Button"), _T("访问"), WS_VISIBLE | WS_CHILD, 820, rc.bottom - 50, 120, 40, hWnd, (HMENU)IDB_GOURL, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 		hWndBtnPrint = CreateWindow(_T("Button"), _T("打印"), WS_VISIBLE | WS_CHILD, 950, rc.bottom - 50, 120, 40, hWnd, (HMENU)IDB_PRINT, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 		hWndBtnPrintPreview = CreateWindow(_T("Button"), _T("打印预览"), WS_VISIBLE | WS_CHILD, 1080, rc.bottom - 50, 120, 40, hWnd, (HMENU)IDB_PRINTPREVIEW, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
@@ -429,7 +429,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			MessageBox(NULL, _T("QueryInterface IID_IHTMLEventObj2 失败"), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONINFORMATION);
 		}
 		VARIANT cvarTemp;
-		//SAFEARRAY* sfArray;
+		SAFEARRAY* sfArray;
 		// Creates a new one-dimensional array
 		//sfArray = SafeArrayCreateVector(VT_VARIANT, 0, 1);
 
@@ -528,6 +528,102 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	//	pEventObj2.setAttribute('__IE_PrinterCMD_Printer', FDriverW, 0);
 	//	pEventObj2.setAttribute('__IE_PrinterCmd_DevMode', FDevModeHandle, 0);
 	//	pEventObj2.setAttribute('__IE_PrinterCmd_DevNames', FDevNamesHandle, 0);
+		/*********************************************************************************/
+		HANDLE hPrinter = NULL;
+		TCHAR* szPrinter = NULL;
+		TCHAR szDevice[MAX_PATH];
+		TCHAR szPort[MAX_PATH];
+		TCHAR szPrinterEx[MAX_PATH];
+		//HGLOBAL phDevNames;
+		//HGLOBAL phDevMode;
+		TCHAR phDevNames[MAX_PATH];
+		TCHAR phDevMode[MAX_PATH];
+		DWORD dwSize = 0;
+
+		if ((!::GetDefaultPrinter(NULL, &dwSize)) && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+		{
+			szPrinter = new TCHAR[dwSize + 1];
+			if (::GetDefaultPrinter(szPrinter, &dwSize))
+			{
+				GetPrinterDeviceEx(szPrinter, phDevNames, phDevMode, szDevice, szPort, szPrinterEx);
+			}
+		}
+		/*****************************************自定义参数开始**********************************************/
+		//__Custom_Parameter_copies 打印份数
+		V_VT(&cvarTemp) = VT_UI4;
+		V_UI4(&cvarTemp) = 1;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__Custom_Parameter_copies")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+		//__Custom_Parameter_selectedPages 选择打印页
+		V_VT(&cvarTemp) = VT_BOOL;
+		V_BOOL(&cvarTemp) = FALSE;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__Custom_Parameter_selectedPages")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+		//__Custom_Parameter_currentPage 当前页
+		V_VT(&cvarTemp) = VT_BOOL;
+		V_BOOL(&cvarTemp) = FALSE;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__Custom_Parameter_currentPage")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+		//__Custom_Parameter_pageFrom 打印从第几页
+		V_VT(&cvarTemp) = VT_UI4;
+		V_UI4(&cvarTemp) = 0;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__Custom_Parameter_pageFrom")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+		//__Custom_Parameter_pageTo 打印到第几页
+		V_VT(&cvarTemp) = VT_UI4;
+		V_UI4(&cvarTemp) = 0;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__Custom_Parameter_pageTo")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+		//__Custom_Parameter_zoomValue 显示比例
+		V_VT(&cvarTemp) = VT_UI4;
+		V_UI4(&cvarTemp) = 78;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__Custom_Parameter_zoomValue")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+		/*****************************************自定义参数结束**********************************************/
+		//	pEventObj2.setAttribute('__IE_PrinterCMD_Device', FDeviceW, 0);
+		V_VT(&cvarTemp) = VT_BSTR;
+		V_BSTR(&cvarTemp) = SysAllocString(szDevice);
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCMD_Device")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+		//	pEventObj2.setAttribute('__IE_PrinterCMD_Port', FPortW, 0);
+		V_VT(&cvarTemp) = VT_BSTR;
+		V_BSTR(&cvarTemp) = SysAllocString(szPort);
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCMD_Port")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+		//	pEventObj2.setAttribute('__IE_PrinterCMD_Printer', FDriverW, 0);
+		V_VT(&cvarTemp) = VT_BSTR;
+		V_BSTR(&cvarTemp) = SysAllocString(szPrinterEx);
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCMD_Printer")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+
+		//V_VT(&cvarTemp) = VT_BSTR;
+		//V_BSTR(&cvarTemp) = SysAllocString(phDevMode);
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("Sanpo_DevMode")), cvarTemp, 0);
+		//VariantClear(&cvarTemp);
+		
+		TCHAR* str;
+		int i = (int)wcstol(phDevMode, &str, 16);//十六进制  
+		VARIANT  varDevNames, varDevMode;
+		VariantInit(&varDevMode);
+		V_VT(&varDevMode) = VT_UI8;
+		V_UI8(&varDevMode) = i;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCmd_DevMode")), varDevMode, 0);
+		VariantClear(&varDevMode);
+
+		//V_VT(&cvarTemp) = VT_BSTR;
+		//V_BSTR(&cvarTemp) = SysAllocString(phDevNames);
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("Sanpo_DevNames")), cvarTemp, 0);
+		//VariantClear(&cvarTemp);
+
+		VariantInit(&varDevNames);
+		i = (int)wcstol(phDevNames, &str, 16);//十六进制  
+		V_VT(&varDevNames) = VT_UI4;
+		V_UI8(&varDevNames) = i;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCmd_DevNames")), varDevNames, 0);
+		VariantClear(&varDevNames);
+
+		delete[]szPrinter;
+		/*********************************************************************************/
 
 	//	if FPrint then
 	//		pEventObj2.setAttribute('__IE_PrintType', 'NoPrompt', 0)
@@ -561,15 +657,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_uPrintFlags")), cvarTemp, 0);
 		VariantClear(&cvarTemp);
 
-	////v: = VarArrayOf([FShortFileName]);
-	////	pEventObj2.setAttribute('__IE_TemporaryFiles', v, 0);
 	//	//__IE_TemporaryFiles		
 	//	//Retrieves a reference to a list of temporary file names saved from this document.
 	//	//检索对从此文档保存的临时文件名列表的引用。
-	//	V_VT(&cvarTemp) = VT_ARRAY;
-	//	V_ARRAY(&cvarTemp) = SafeArrayCreateVector
-	//	_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_TemporaryFiles")), cvarTemp, 0);
-	//	VariantClear(&cvarTemp);
+		TCHAR shortPathName[MAX_PATH];
+		GetShortPathName(FileName, shortPathName, MAX_PATH);
+		sfArray = SafeArrayCreateVector(VT_BSTR, 0, 1);
+		V_VT(&cvarTemp) = VT_BSTR;
+		V_BSTR(&cvarTemp) = SysAllocString(shortPathName);
+		LONG index = 0;
+		SafeArrayPutElement(sfArray, &index, &cvarTemp);
+		VariantClear(&cvarTemp);
+		V_VT(&cvarTemp) = VT_ARRAY;
+		V_ARRAY(&cvarTemp) = sfArray;
+		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_TemporaryFiles")), cvarTemp, 0);
+		VariantClear(&cvarTemp);
+		SafeArrayDestroy(sfArray);
 
 		//__IE_ParentHWND
 		//---------------------------------
@@ -589,116 +692,84 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_DisplayUrl")), cvarTemp, 0);
 		VariantClear(&cvarTemp);
 
-		HANDLE hPrinter = NULL;
-		TCHAR* szPrinter = NULL;
-		TCHAR szDevice[MAX_PATH];
-		TCHAR szPort[MAX_PATH];
-		TCHAR szPrinterEx[MAX_PATH];
-		HGLOBAL phDevNames;
-		HGLOBAL phDevMode;
-		DWORD dwSize = 0;
-
-		
-		if ((!::GetDefaultPrinter(NULL, &dwSize)) && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
-		{
-
-			szPrinter = new TCHAR[dwSize + 1];
-			if (::GetDefaultPrinter(szPrinter, &dwSize))
-			{
-				GetPrinterDevice(szPrinter, &phDevNames, &phDevMode, szDevice, szPort, szPrinterEx);
-			}
-		}
-
-		//	pEventObj2.setAttribute('__IE_PrinterCMD_Device', FDeviceW, 0);
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(szDevice);
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCMD_Device")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
-		//	pEventObj2.setAttribute('__IE_PrinterCMD_Port', FPortW, 0);
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(szPort);
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCMD_Port")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
-		//	pEventObj2.setAttribute('__IE_PrinterCMD_Printer', FDriverW, 0);
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(szPrinterEx);
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCMD_Printer")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
-
-		VARIANT  varDevNames, varDevMode;
-		VariantInit(&varDevMode);
-		V_VT(&varDevMode) = VT_UI4;
-		V_BYREF(&varDevMode) = &phDevMode;
-		//V_UI8(&varDevMode) = phDevMode;
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCmd_DevMode")), varDevMode, 0);
-		VariantClear(&varDevMode);
-
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(_T("Sanpo is Zhaoxiubin !"));
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("Sanpo_DevMode")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
-
-		VariantInit(&varDevNames);
-		V_VT(&varDevNames) = VT_UI4;
-		V_BYREF(&varDevNames) = &phDevNames;
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCmd_DevNames")), varDevNames, 0);
-		VariantClear(&varDevNames);
-
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(_T("Sanpo is Zhaoxiubin !"));
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("Sanpo_DevNames")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
-
-		delete[]szPrinter;
-
 		VARIANT  varArgs, varReturn;
 		VariantInit(&varArgs);
 		V_VT(&varArgs) = VT_UNKNOWN;
 		V_UNKNOWN(&varArgs) = _pHtmlEvent2;
 
-		TCHAR    szTemp[MAX_PATH * 2];
+		//TCHAR    szTemp[MAX_PATH * 2];
 
 		int  cx = GetSystemMetrics(SM_CXFULLSCREEN);
 		int  cy = GetSystemMetrics(SM_CYFULLSCREEN);
 		_stprintf_s(pOptions, MAX_PATH, _T("help:no;status:no;scroll:no;dialogLeft:0px;dialogTop:0px;dialogWidth:%dpx;dialogHeight:%dpx;"), cx - 15, cy);
 
-		HINSTANCE   hinstMSHTML = LoadLibrary(TEXT("MSHTML.DLL"));
-		if (hinstMSHTML)
+	//	if FPrint then
+	//		begin
+	//		FWindowParams : = '';
+	//FDialogFlags: = HTMLDLG_ALLOW_UNKNOWN_THREAD or HTMLDLG_NOUI or HTMLDLG_MODELESS or HTMLDLG_PRINT_TEMPLATE;
+	//	end
+	//	else
+	//		begin
+	//		FWindowParams : = 'resizable=yes;';
+	//FDialogFlags: = HTMLDLG_ALLOW_UNKNOWN_THREAD or HTMLDLG_MODAL or HTMLDLG_MODELESS or HTMLDLG_PRINT_TEMPLATE;
+	//	end;
+		DWORD dialogFlags = HTMLDLG_ALLOW_UNKNOWN_THREAD | HTMLDLG_MODAL | HTMLDLG_MODELESS | HTMLDLG_PRINT_TEMPLATE;
+		//::ShowHTMLDialogEx(0, pURLMoniker, dialogFlags, &varArgs, pOptions, &varReturn);
+
+		HINSTANCE hinstMSHTML = LoadLibrary(TEXT("MSHTML.DLL"));
+		if (hinstMSHTML != NULL)
 		{
-			SHOWHTMLDIALOGFN* pfnShowHTMLDialog;
-			pfnShowHTMLDialog = (SHOWHTMLDIALOGFN*)GetProcAddress(hinstMSHTML, "ShowHTMLDialog");
-			//void* p = GetProcAddress(hinstMSHTML, "navigate");
-			if (pfnShowHTMLDialog)
+			SHOWHTMLDIALOGEXFN* pfnShowHTMLDialogEx;
+			pfnShowHTMLDialogEx = (SHOWHTMLDIALOGEXFN*)GetProcAddress(hinstMSHTML, "ShowHTMLDialogEx");
+			if (pfnShowHTMLDialogEx)
 			{
-				hr = (*pfnShowHTMLDialog)(hWndWebBrower, pURLMoniker, &varArgs, pOptions, &varReturn);
-				VariantClear(&varArgs);
-				pURLMoniker->Release();
-
-				if (SUCCEEDED(hr))
+				if (pURLMoniker)
 				{
-					switch (varReturn.vt)
-					{
-					case VT_BSTR:
-					{
-						TCHAR szData[MAX_PATH];
-						wsprintf(szTemp, TEXT("The selected item was \"%s\"."), szData);
-						VariantClear(&varReturn);
-						break;
-					}
-					default:
-						lstrcpy(szTemp, TEXT("Cancel was selected."));
-						break;
-					}
-					MessageBox(NULL, szTemp, TEXT("HTML Dialog Sample"), MB_OK | MB_ICONINFORMATION);
-				}
-				else
-				{
-					MessageBox(NULL, TEXT("ShowHTMLDialog Failed."), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONERROR);
-
+					DWORD dwFlags = HTMLDLG_MODELESS | HTMLDLG_VERIFY;
+					(*pfnShowHTMLDialogEx)(NULL, pURLMoniker, dialogFlags, &varArgs, pOptions, &varReturn);
+					pURLMoniker->Release();
 				}
 			}
-			FreeLibrary(hinstMSHTML);
 		}
+		FreeLibrary(hinstMSHTML);
+
+		//HINSTANCE   hinstMSHTML = LoadLibrary(TEXT("MSHTML.DLL"));
+		//if (hinstMSHTML)
+		//{
+		//	SHOWHTMLDIALOGFN* pfnShowHTMLDialog;
+		//	pfnShowHTMLDialog = (SHOWHTMLDIALOGFN*)GetProcAddress(hinstMSHTML, "ShowHTMLDialog");
+		//	//void* p = GetProcAddress(hinstMSHTML, "navigate");
+		//	if (pfnShowHTMLDialog)
+		//	{
+		//		hr = (*pfnShowHTMLDialog)(hWndWebBrower, pURLMoniker, &varArgs, pOptions, &varReturn);
+		//		VariantClear(&varArgs);
+		//		pURLMoniker->Release();
+
+		//		if (SUCCEEDED(hr))
+		//		{
+		//			switch (varReturn.vt)
+		//			{
+		//			case VT_BSTR:
+		//			{
+		//				TCHAR szData[MAX_PATH];
+		//				wsprintf(szTemp, TEXT("The selected item was \"%s\"."), szData);
+		//				VariantClear(&varReturn);
+		//				break;
+		//			}
+		//			default:
+		//				lstrcpy(szTemp, TEXT("Cancel was selected."));
+		//				break;
+		//			}
+		//			MessageBox(NULL, szTemp, TEXT("HTML Dialog Sample"), MB_OK | MB_ICONINFORMATION);
+		//		}
+		//		else
+		//		{
+		//			MessageBox(NULL, TEXT("ShowHTMLDialog Failed."), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONERROR);
+
+		//		}
+		//	}
+		//	FreeLibrary(hinstMSHTML);
+		//}
 
 		//hr = ::ShowHTMLDialog(NULL, pURLMoniker, &varArgs, pOptions, &varReturn);
 		//hr = ShowHTMLDialog(NULL, pURLMoniker, NULL, pOptions, NULL);

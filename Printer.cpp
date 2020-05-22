@@ -1,4 +1,4 @@
-#include <atlbase.h>
+﻿#include <atlbase.h>
 #include <atlcom.h>
 #include <atlwin.h>
 #include <atlstr.h>
@@ -24,6 +24,25 @@ BOOL GetPrinterDeviceEx(LPTSTR pszPrinterName, TCHAR* phDevNames, TCHAR* phDevMo
     //}
     //HGLOBAL  hDevMode = GlobalAlloc(GHND, lngPrinter);
     //DEVMODE* pDevMode = (DEVMODE*)GlobalLock(hDevMode);
+    //::DocumentProperties(0, hPrinter, pszPrinterName, pDevMode, NULL, DM_OUT_BUFFER);
+    //::DocumentProperties(0, hPrinter, pszPrinterName, pDevMode, pDevMode, DM_OUT_BUFFER or DM_IN_BUFFER);
+    //pDevMode->dmPaperLength;
+    ////// 如果要将当前打印机纸张变为自定义 dmPaperSize必须设置成DMPAPER_USER
+    ////pDevMode->dmPaperSize = DMPAPER_USER;
+    ////pDevMode->dmPaperLength = 1140;
+    ////pDevMode->dmPaperWidth = 256;
+    //////以下三条语句是对相应的dmFields成员进行置位。
+    ////pDevMode->dmFields = pDevMode->dmFields | pDevMode->dmPaperSize;
+    ////pDevMode->dmFields = pDevMode->dmFields | pDevMode->dmPaperLength;
+    ////pDevMode->dmFields = pDevMode->dmFields | pDevMode->dmPaperWidth;
+    ////// 将纸张设置成A4 纸
+    //pDevMode->dmPaperSize = DMPAPER_A4;
+    //pDevMode->dmFields = pDevMode->dmFields | DM_PAPERSIZE;
+    //pDevMode->dmCopies;
+    //pDevMode->dmDefaultSource;
+    //pDevMode->dmOrientation;
+    //pDevMode->dmPanningHeight;
+
 
     // obtain PRINTER_INFO_2 structure and close printer
     DWORD dwBytesReturned, dwBytesNeeded;
@@ -35,6 +54,8 @@ BOOL GetPrinterDeviceEx(LPTSTR pszPrinterName, TCHAR* phDevNames, TCHAR* phDevMo
         return FALSE;
     }
     ClosePrinter(hPrinter);
+
+    
 
     // Allocate a global handle for DEVMODE
     HGLOBAL  hDevMode = GlobalAlloc(GHND, sizeof(*p2->pDevMode) + p2->pDevMode->dmDriverExtra);

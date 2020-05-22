@@ -72,7 +72,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>F:\WorkSpace\visualStudio\vc\ietest-2004091630\ietest\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -130,8 +132,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CreateTempFile.cpp" />
-    <ClCompile Include="MshtmlShowHtmlDialog.cpp" />
+    <ClCompile Include="DebugInfoPrint.cpp" />
+    <ClCompile Include="lib_json\json_reader.cpp" />
+    <ClCompile Include="lib_json\json_value.cpp" />
+    <ClCompile Include="lib_json\json_writer.cpp" />
+    <ClCompile Include="MshtmlShowHtmlDialog.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Printer.cpp" />
+    <ClCompile Include="PrintUtil.cpp" />
+    <ClCompile Include="StringUtil.cpp" />
+    <ClCompile Include="temp.cpp" />
     <ClCompile Include="TestMshtml01.cpp" />
     <ClCompile Include="TestMshtml02.cpp" />
     <ClCompile Include="TestMshtml03.cpp" />
@@ -143,8 +154,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CreateTempFile.h" />
+    <ClInclude Include="DebugInfoPrint.h" />
+    <ClInclude Include="lib_json\json_batchallocator.h" />
     <ClInclude Include="Printer.h" />
+    <ClInclude Include="PrintUtil.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="StringUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ietest.rc" />

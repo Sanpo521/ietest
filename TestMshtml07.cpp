@@ -6,6 +6,7 @@ CComModule _Module;
 #include <atlstr.h>
 #include "Printer.h"
 #include <thread>
+#include "PrintUtil.h"
 
 #include "CreateTempFile.h"
 
@@ -38,7 +39,7 @@ TCHAR buf[MAX_URL];
 
 DWORD ret;
 HINSTANCE hInstWindow;
-HWND hWndWindow, hWndWebBrower, hWndEditUrl, hWndBtnGo, hWndBtnPrint, hWndBtnPrintPreview;
+HWND hWndWindow, hWndWebBrower, hWndEditPrinterSet, hWndEditUrl, hWndBtnGo, hWndBtnPrint, hWndBtnPrintPreview;
 TCHAR* n_str;
 size_t len;
 
@@ -308,9 +309,50 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case IDB_GOURL: {
 			TCHAR bufUrl[MAX_URL];
-			GetWindowText(hWndEditUrl, bufUrl, MAX_URL);
-			GotoUrl(iWebBrowser, bufUrl);
-			bolLoad = TRUE;
+			//GetWindowText(hWndEditUrl, bufUrl, MAX_URL);
+			//GotoUrl(iWebBrowser, bufUrl);
+			//bolLoad = TRUE;
+
+			TCHAR printerSetting[MAX_URL];
+			GetWindowText(hWndEditPrinterSet, printerSetting, MAX_URL);
+			//
+			TCHAR printerName[MAX_URL];
+			if (!GetDefaultPrinterInfo(printerName)) {
+				MessageBox(NULL, _T("没有设置默认打印机"), _T("系统提示"), MB_OK);
+			}
+
+			//// Open printer
+			//HANDLE hPrinter;
+			//if (!::OpenPrinter(printerName, &hPrinter, NULL)) {
+			//	MessageBox(NULL, _T("打开打印机失败"), _T("系统提示"), MB_OK);
+			//	return FALSE;
+			//}
+
+			TCHAR printerSettingA[MAX_URL];
+			if (GetPrintSettingInfo(printerName, printerSettingA)) {
+				MessageBox(NULL, printerSettingA, _T("系统提示"), MB_OK);
+			}
+			else {
+				MessageBox(NULL, _T("获取打印机设置失败"), _T("系统提示"), MB_OK);
+			}
+
+			TCHAR printerSettingB[MAX_URL];
+			_tcscpy_s(printerSettingB, MAX_URL, _T("{\n\"copies\":1,\n\"orientation\":1,\n\"paperSize\":8,\n\"paperSource\":7\n}\n"));
+			if (SetPrintSettingInfo(printerName, printerSettingB)) {
+				MessageBox(NULL, printerSettingB, _T("系统提示"), MB_OK);
+			}
+			else {
+				MessageBox(NULL, _T("设置打印机设置失败"), _T("系统提示"), MB_OK);
+			}
+
+			TCHAR printerSettingC[MAX_URL];
+			if (GetPrintSettingInfo(printerName, printerSettingC)) {
+				MessageBox(NULL, printerSettingC, _T("系统提示"), MB_OK);
+			}
+			else {
+				MessageBox(NULL, _T("获取打印机设置失败"), _T("系统提示"), MB_OK);
+			}
+			//::ClosePrinter(hPrinter);
 			break;
 		}
 		case IDB_PRINT:
@@ -360,7 +402,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (0 != rc.right && 0 != rc.bottom)
 			{
 				//重绘函数，用以更新对话框上控件的位置和大小
-				MoveWindow(hWndWebBrower, rc.left, rc.top, rc.right, rc.bottom - 60, true);
+				MoveWindow(hWndWebBrower, rc.left, rc.top, rc.right, rc.bottom - 110, true);
+				MoveWindow(hWndEditPrinterSet, 10, rc.bottom - 100, rc.right-20, 40, true);
 				MoveWindow(hWndEditUrl, 10, rc.bottom - 50, 800, 40, true);
 				MoveWindow(hWndBtnGo, 820, rc.bottom - 50, 120, 40, true);
 				MoveWindow(hWndBtnPrint, 950, rc.bottom - 50, 120, 40, true);
@@ -374,6 +417,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hWndWebBrower = WinContainer.Create(hWnd, rc, 0, WS_CHILD | WS_VISIBLE);
 		WinContainer.CreateControl(pszName);
 		WinContainer.QueryControl(__uuidof(IWebBrowser2), (void**)&iWebBrowser);
+		hWndEditPrinterSet = CreateWindow(_T("edit"), _T(""), WS_CHILD | WS_VISIBLE | WS_BORDER, 10, rc.bottom - 110, rc.right - 20, 40, hWnd, NULL, NULL, NULL);
 		hWndEditUrl = CreateWindow(_T("edit"), _T("file:///F:/WorkSpace/visualStudio/vc/ietest-2004091630/resouce/pagesource.html"), WS_CHILD | WS_VISIBLE | WS_BORDER, 10, rc.bottom - 50, 800, 40, hWnd, NULL, NULL, NULL);
 		hWndBtnGo = CreateWindow(_T("Button"), _T("访问"), WS_VISIBLE | WS_CHILD, 820, rc.bottom - 50, 120, 40, hWnd, (HMENU)IDB_GOURL, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 		hWndBtnPrint = CreateWindow(_T("Button"), _T("打印"), WS_VISIBLE | WS_CHILD, 950, rc.bottom - 50, 120, 40, hWnd, (HMENU)IDB_PRINT, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
@@ -640,13 +684,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			MessageBox(NULL, TEXT("CreateURLMoniker Failed."), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONERROR);
 			break;
 		}
-		//__IE_TemplateUrl		
-		//Retrieves a string specifying theURLof the print template.
-		//检索一个字符串，该字符串指定打印模板的URL。
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = bstrURL;
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_TemplateUrl")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
+		////__IE_TemplateUrl		
+		////Retrieves a string specifying theURLof the print template.
+		////检索一个字符串，该字符串指定打印模板的URL。
+		//V_VT(&cvarTemp) = VT_BSTR;
+		//V_BSTR(&cvarTemp) = bstrURL;
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_TemplateUrl")), cvarTemp, 0);
+		//VariantClear(&cvarTemp);
 
 		//__IE_uPrintFlags		
 		//Retrieves a print flag value.

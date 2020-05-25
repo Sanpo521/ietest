@@ -7,7 +7,7 @@ CComModule _Module;
 #include "Printer.h"
 #include <thread>
 #include "PrintUtil.h"
-
+#include "IEPageSetup.h"
 #include "CreateTempFile.h"
 
 #pragma comment(lib,"atls")
@@ -39,7 +39,8 @@ TCHAR buf[MAX_URL];
 
 DWORD ret;
 HINSTANCE hInstWindow;
-HWND hWndWindow, hWndWebBrower, hWndEditPrinterSet, hWndEditUrl, hWndBtnGo, hWndBtnPrint, hWndBtnPrintPreview;
+HWND hWndWindow, hWndWebBrower, hWndEditUrl, hWndBtnGo, hWndBtnPrint, hWndBtnPrintPreview;
+HWND hWndEditPrinterSetOld, hWndEditPrinterSetNew, hWndEditPageSetupOld, hWndEditPageSetupNew;
 TCHAR* n_str;
 size_t len;
 
@@ -308,51 +309,39 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam))
 		{
 		case IDB_GOURL: {
-			TCHAR bufUrl[MAX_URL];
-			//GetWindowText(hWndEditUrl, bufUrl, MAX_URL);
-			//GotoUrl(iWebBrowser, bufUrl);
-			//bolLoad = TRUE;
-
-			TCHAR printerSetting[MAX_URL];
-			GetWindowText(hWndEditPrinterSet, printerSetting, MAX_URL);
-			//
+			TCHAR oldIePaggeSetup[MAX_URL];
+			if (GetIEPageSetup(oldIePaggeSetup)) {
+				SetWindowText(hWndEditPageSetupOld, oldIePaggeSetup);
+			}else {
+				MessageBox(NULL, _T("获取IE页面配置失败"), _T("系统提示"), MB_OK);
+			}
+			TCHAR newIePaggeSetup[MAX_URL];
+			GetWindowText(hWndEditPageSetupNew, newIePaggeSetup, MAX_URL);
+			if (!SetIEPageSetup(newIePaggeSetup)) {
+				MessageBox(NULL, _T("设置IE页面配置失败"), _T("系统提示"), MB_OK);
+			}
 			TCHAR printerName[MAX_URL];
 			if (!GetDefaultPrinterInfo(printerName)) {
 				MessageBox(NULL, _T("没有设置默认打印机"), _T("系统提示"), MB_OK);
 			}
-
-			//// Open printer
-			//HANDLE hPrinter;
-			//if (!::OpenPrinter(printerName, &hPrinter, NULL)) {
-			//	MessageBox(NULL, _T("打开打印机失败"), _T("系统提示"), MB_OK);
-			//	return FALSE;
-			//}
-
-			TCHAR printerSettingA[MAX_URL];
-			if (GetPrintSettingInfo(printerName, printerSettingA)) {
-				MessageBox(NULL, printerSettingA, _T("系统提示"), MB_OK);
-			}
 			else {
-				MessageBox(NULL, _T("获取打印机设置失败"), _T("系统提示"), MB_OK);
+				TCHAR printerSettingA[MAX_JSON];
+				if (GetPrintSettingInfo(printerName, printerSettingA)) {
+					SetWindowText(hWndEditPrinterSetOld, printerSettingA);
+				}
+				else {
+					MessageBox(NULL, _T("获取打印机设置失败"), _T("系统提示"), MB_OK);
+				}
+				TCHAR printerSetting[MAX_JSON];
+				GetWindowText(hWndEditPrinterSetNew, printerSetting, MAX_JSON);
+				if (!SetPrintSettingInfo(printerName, printerSetting)) {
+					MessageBox(NULL, _T("设置打印机设置失败"), _T("系统提示"), MB_OK);
+				}
 			}
-
-			TCHAR printerSettingB[MAX_URL];
-			_tcscpy_s(printerSettingB, MAX_URL, _T("{\n\"copies\":1,\n\"orientation\":1,\n\"paperSize\":8,\n\"paperSource\":7\n}\n"));
-			if (SetPrintSettingInfo(printerName, printerSettingB)) {
-				MessageBox(NULL, printerSettingB, _T("系统提示"), MB_OK);
-			}
-			else {
-				MessageBox(NULL, _T("设置打印机设置失败"), _T("系统提示"), MB_OK);
-			}
-
-			TCHAR printerSettingC[MAX_URL];
-			if (GetPrintSettingInfo(printerName, printerSettingC)) {
-				MessageBox(NULL, printerSettingC, _T("系统提示"), MB_OK);
-			}
-			else {
-				MessageBox(NULL, _T("获取打印机设置失败"), _T("系统提示"), MB_OK);
-			}
-			//::ClosePrinter(hPrinter);
+			TCHAR bufUrl[MAX_URL];
+			GetWindowText(hWndEditUrl, bufUrl, MAX_URL);
+			GotoUrl(iWebBrowser, bufUrl);
+			bolLoad = TRUE;
 			break;
 		}
 		case IDB_PRINT:
@@ -402,12 +391,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (0 != rc.right && 0 != rc.bottom)
 			{
 				//重绘函数，用以更新对话框上控件的位置和大小
-				MoveWindow(hWndWebBrower, rc.left, rc.top, rc.right, rc.bottom - 110, true);
-				MoveWindow(hWndEditPrinterSet, 10, rc.bottom - 100, rc.right-20, 40, true);
-				MoveWindow(hWndEditUrl, 10, rc.bottom - 50, 800, 40, true);
-				MoveWindow(hWndBtnGo, 820, rc.bottom - 50, 120, 40, true);
-				MoveWindow(hWndBtnPrint, 950, rc.bottom - 50, 120, 40, true);
-				MoveWindow(hWndBtnPrintPreview, 1080, rc.bottom - 50, 120, 40, true);
+				MoveWindow(hWndWebBrower, rc.left, rc.top, rc.right, rc.bottom - 130, true);
+				MoveWindow(hWndEditPageSetupNew, 10, rc.bottom - 120, (rc.right - 30) / 2, 30, true);
+				MoveWindow(hWndEditPageSetupOld, (rc.right - 30) / 2 + 20, rc.bottom - 120, (rc.right - 30) / 2, 30, true);
+				MoveWindow(hWndEditPrinterSetNew, 10, rc.bottom - 80, (rc.right - 30) / 2, 30, true);
+				MoveWindow(hWndEditPrinterSetOld, (rc.right-30)/2+20, rc.bottom - 80, (rc.right - 30) / 2, 30, true);
+				MoveWindow(hWndEditUrl, 10, rc.bottom - 40, 800, 30, true);
+				MoveWindow(hWndBtnGo, 820, rc.bottom - 40, 120, 30, true);
+				MoveWindow(hWndBtnPrint, 950, rc.bottom - 40, 120, 30, true);
+				MoveWindow(hWndBtnPrintPreview, 1080, rc.bottom - 40, 120, 30, true);
 			}
 		}
 		EndPaint(hWnd, &ps);
@@ -417,11 +409,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hWndWebBrower = WinContainer.Create(hWnd, rc, 0, WS_CHILD | WS_VISIBLE);
 		WinContainer.CreateControl(pszName);
 		WinContainer.QueryControl(__uuidof(IWebBrowser2), (void**)&iWebBrowser);
-		hWndEditPrinterSet = CreateWindow(_T("edit"), _T(""), WS_CHILD | WS_VISIBLE | WS_BORDER, 10, rc.bottom - 110, rc.right - 20, 40, hWnd, NULL, NULL, NULL);
-		hWndEditUrl = CreateWindow(_T("edit"), _T("file:///F:/WorkSpace/visualStudio/vc/ietest-2004091630/resouce/pagesource.html"), WS_CHILD | WS_VISIBLE | WS_BORDER, 10, rc.bottom - 50, 800, 40, hWnd, NULL, NULL, NULL);
-		hWndBtnGo = CreateWindow(_T("Button"), _T("访问"), WS_VISIBLE | WS_CHILD, 820, rc.bottom - 50, 120, 40, hWnd, (HMENU)IDB_GOURL, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
-		hWndBtnPrint = CreateWindow(_T("Button"), _T("打印"), WS_VISIBLE | WS_CHILD, 950, rc.bottom - 50, 120, 40, hWnd, (HMENU)IDB_PRINT, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
-		hWndBtnPrintPreview = CreateWindow(_T("Button"), _T("打印预览"), WS_VISIBLE | WS_CHILD, 1080, rc.bottom - 50, 120, 40, hWnd, (HMENU)IDB_PRINTPREVIEW, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hWndEditPageSetupNew = CreateWindow(_T("edit"), _T("{\"footer\":\"&b\",\"header\":\"&b\",\"marginBottom\":\"21\",\"marginLeft\":\"15\",\"marginRight\":\"15\",\"marginTop\":\"21\"}"), WS_CHILD | WS_VISIBLE | WS_BORDER, 10, rc.bottom - 120, (rc.right - 30) / 2, 30, hWnd, NULL, NULL, NULL);
+		hWndEditPageSetupOld = CreateWindow(_T("edit"), _T(""), WS_CHILD | WS_VISIBLE | WS_BORDER, (rc.right - 30) / 2 + 20, rc.bottom - 120, (rc.right - 30) / 2, 30, hWnd, NULL, NULL, NULL);
+		hWndEditPrinterSetNew = CreateWindow(_T("edit"), _T("{\"copies\":2,\"orientation\":2,\"paperHeight\":4200,\"paperSize\":8,\"paperSource\":15,\"paperWidth\":2970}"), WS_CHILD | WS_VISIBLE | WS_BORDER, 10, rc.bottom - 80, (rc.right - 30) / 2, 30, hWnd, NULL, NULL, NULL);
+		hWndEditPrinterSetOld = CreateWindow(_T("edit"), _T(""), WS_CHILD | WS_VISIBLE | WS_BORDER, (rc.right - 30) / 2 + 20, rc.bottom - 80, (rc.right - 30) / 2, 30, hWnd, NULL, NULL, NULL);
+		//file:///F:/WorkDocument/hntp/插件/topprint/topprint.html
+		//file:///F:/WorkSpace/visualStudio/vc/ietest-2004091630/resouce/pagesource.html
+		hWndEditUrl = CreateWindow(_T("edit"), _T("file:///F:/WorkDocument/hntp/插件/topprint/topprinth.html"), WS_CHILD | WS_VISIBLE | WS_BORDER, 10, rc.bottom - 40, 800, 30, hWnd, NULL, NULL, NULL);
+		hWndBtnGo = CreateWindow(_T("Button"), _T("访问"), WS_VISIBLE | WS_CHILD, 820, rc.bottom - 40, 120, 30, hWnd, (HMENU)IDB_GOURL, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hWndBtnPrint = CreateWindow(_T("Button"), _T("打印"), WS_VISIBLE | WS_CHILD, 950, rc.bottom - 40, 120, 30, hWnd, (HMENU)IDB_PRINT, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
+		hWndBtnPrintPreview = CreateWindow(_T("Button"), _T("打印预览"), WS_VISIBLE | WS_CHILD, 1080, rc.bottom - 40, 120, 30, hWnd, (HMENU)IDB_PRINTPREVIEW, ((LPCREATESTRUCT)lParam)->hInstance, NULL);
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -503,15 +500,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//检索一个整数，该整数指定打印模板的字体大小。
 		//---------------------------------
 
-		//__IE_BrowseDocument		
-		//Retrieves thedocumentobject of the page being printed or print-previewed.	
-		//检索正在打印或已打印预览的页面的文档对象。
-		//---------------------------------
-		VARIANT vtUnkown;
-		V_VT(&vtUnkown) = VT_UNKNOWN;
-		V_UNKNOWN(&vtUnkown) = pDp;
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_BrowseDocument")), vtUnkown, 0);
-		VariantClear(&vtUnkown);
+		////__IE_BrowseDocument		
+		////Retrieves thedocumentobject of the page being printed or print-previewed.	
+		////检索正在打印或已打印预览的页面的文档对象。
+		////---------------------------------
+		//VARIANT vtUnkown;
+		//V_VT(&vtUnkown) = VT_UNKNOWN;
+		//V_UNKNOWN(&vtUnkown) = pDp;
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_BrowseDocument")), vtUnkown, 0);
+		//VariantClear(&vtUnkown);
 
 		//__IE_ContentDocumentUrl		
 		//Retrieves a string specifying theURLof a temporary copy of the source document for the print template.	
@@ -522,50 +519,50 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_ContentDocumentUrl")), cvarTemp, 0);
 		VariantClear(&cvarTemp);
 
-		//__IE_ContentSelectionUrl	
-		//Retrieves a string specifying theURLof a temporary .htm file containing the current selection in the browser.
-		//检索一个字符串，该字符串指定浏览器中包含当前选择的临时.htm文件的URL。
-		//---------------------------------
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(_T(""));
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_ContentSelectionUrl")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
+		////__IE_ContentSelectionUrl	
+		////Retrieves a string specifying theURLof a temporary .htm file containing the current selection in the browser.
+		////检索一个字符串，该字符串指定浏览器中包含当前选择的临时.htm文件的URL。
+		////---------------------------------
+		//V_VT(&cvarTemp) = VT_BSTR;
+		//V_BSTR(&cvarTemp) = SysAllocString(_T(""));
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_ContentSelectionUrl")), cvarTemp, 0);
+		//VariantClear(&cvarTemp);
 
-		//__IE_HeaderString		
-		//Retrieves a string specifying the header string from thePage Setupdialog box.
-		//从“页面设置”对话框中检索一个用于指定标题字符串的字符串。
-		//---------------------------------
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(_T(""));
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_HeaderString")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
+		////__IE_HeaderString		
+		////Retrieves a string specifying the header string from thePage Setupdialog box.
+		////从“页面设置”对话框中检索一个用于指定标题字符串的字符串。
+		////---------------------------------
+		//V_VT(&cvarTemp) = VT_BSTR;
+		//V_BSTR(&cvarTemp) = SysAllocString(_T(""));
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_HeaderString")), cvarTemp, 0);
+		//VariantClear(&cvarTemp);
 
-		//__IE_FooterString		
-		//Retrieves a string specifying the footer string from thePage Setupdialog box.
-		//从“页面设置”对话框中检索指定页脚字符串的字符串。
-		//---------------------------------
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(_T(""));
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_FooterString")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
+		////__IE_FooterString		
+		////Retrieves a string specifying the footer string from thePage Setupdialog box.
+		////从“页面设置”对话框中检索指定页脚字符串的字符串。
+		////---------------------------------
+		//V_VT(&cvarTemp) = VT_BSTR;
+		//V_BSTR(&cvarTemp) = SysAllocString(_T(""));
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_FooterString")), cvarTemp, 0);
+		//VariantClear(&cvarTemp);
 
-		//__IE_ActiveFrame		
-		//Retrieves the index of the active frame in the frames collection.
-		//检索框架集合中活动框架的索引。
-		//---------------------------------
-		V_VT(&cvarTemp) = VT_I4;
-		V_I4(&cvarTemp) = 0;
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_ActiveFrame")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
+		////__IE_ActiveFrame		
+		////Retrieves the index of the active frame in the frames collection.
+		////检索框架集合中活动框架的索引。
+		////---------------------------------
+		//V_VT(&cvarTemp) = VT_I4;
+		//V_I4(&cvarTemp) = 0;
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_ActiveFrame")), cvarTemp, 0);
+		//VariantClear(&cvarTemp);
 
-		//__IE_OutlookHeader		
-		//Retrieves a string specifying theMicrosoft Outlookheader string.
-		//检索指定Microsoft Outlookheader字符串的字符串。
-		//---------------------------------
-		V_VT(&cvarTemp) = VT_BSTR;
-		V_BSTR(&cvarTemp) = SysAllocString(_T(""));
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_OutlookHeader")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
+		////__IE_OutlookHeader		
+		////Retrieves a string specifying theMicrosoft Outlookheader string.
+		////检索指定Microsoft Outlookheader字符串的字符串。
+		////---------------------------------
+		//V_VT(&cvarTemp) = VT_BSTR;
+		//V_BSTR(&cvarTemp) = SysAllocString(_T(""));
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_OutlookHeader")), cvarTemp, 0);
+		//VariantClear(&cvarTemp);
 
 	//	pEventObj2.setAttribute('__IE_PrinterCMD_Device', FDeviceW, 0);
 	//	pEventObj2.setAttribute('__IE_PrinterCMD_Port', FPortW, 0);
@@ -593,11 +590,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		}
 		/*****************************************自定义参数开始**********************************************/
-		//__Custom_Parameter_copies 打印份数
-		V_VT(&cvarTemp) = VT_UI4;
-		V_UI4(&cvarTemp) = 1;
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__Custom_Parameter_copies")), cvarTemp, 0);
-		VariantClear(&cvarTemp);
+		////__Custom_Parameter_copies 打印份数
+		//V_VT(&cvarTemp) = VT_UI4;
+		//V_UI4(&cvarTemp) = 1;
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__Custom_Parameter_copies")), cvarTemp, 0);
+		//VariantClear(&cvarTemp);
 		//__Custom_Parameter_selectedPages 选择打印页
 		V_VT(&cvarTemp) = VT_BOOL;
 		V_BOOL(&cvarTemp) = FALSE;
@@ -620,7 +617,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		VariantClear(&cvarTemp);
 		//__Custom_Parameter_zoomValue 显示比例
 		V_VT(&cvarTemp) = VT_UI4;
-		V_UI4(&cvarTemp) = 78;
+		V_UI4(&cvarTemp) = 75;
 		_pHtmlEvent2->setAttribute(SysAllocString(_T("__Custom_Parameter_zoomValue")), cvarTemp, 0);
 		VariantClear(&cvarTemp);
 		/*****************************************自定义参数结束**********************************************/
@@ -640,31 +637,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCMD_Printer")), cvarTemp, 0);
 		VariantClear(&cvarTemp);
 
-		//V_VT(&cvarTemp) = VT_BSTR;
-		//V_BSTR(&cvarTemp) = SysAllocString(phDevMode);
-		//_pHtmlEvent2->setAttribute(SysAllocString(_T("Sanpo_DevMode")), cvarTemp, 0);
-		//VariantClear(&cvarTemp);
-		
-		TCHAR* str;
-		int i = (int)wcstol(phDevMode, &str, 16);//十六进制  
-		VARIANT  varDevNames, varDevMode;
-		VariantInit(&varDevMode);
-		V_VT(&varDevMode) = VT_UI8;
-		V_UI8(&varDevMode) = i;
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCmd_DevMode")), varDevMode, 0);
-		VariantClear(&varDevMode);
+		////V_VT(&cvarTemp) = VT_BSTR;
+		////V_BSTR(&cvarTemp) = SysAllocString(phDevMode);
+		////_pHtmlEvent2->setAttribute(SysAllocString(_T("Sanpo_DevMode")), cvarTemp, 0);
+		////VariantClear(&cvarTemp);
+		//
+		//TCHAR* str;
+		//int i = (int)wcstol(phDevMode, &str, 16);//十六进制  
+		//VARIANT  varDevNames, varDevMode;
+		//VariantInit(&varDevMode);
+		//V_VT(&varDevMode) = VT_UI8;
+		//V_UI8(&varDevMode) = i;
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCmd_DevMode")), varDevMode, 0);
+		//VariantClear(&varDevMode);
 
-		//V_VT(&cvarTemp) = VT_BSTR;
-		//V_BSTR(&cvarTemp) = SysAllocString(phDevNames);
-		//_pHtmlEvent2->setAttribute(SysAllocString(_T("Sanpo_DevNames")), cvarTemp, 0);
-		//VariantClear(&cvarTemp);
+		////V_VT(&cvarTemp) = VT_BSTR;
+		////V_BSTR(&cvarTemp) = SysAllocString(phDevNames);
+		////_pHtmlEvent2->setAttribute(SysAllocString(_T("Sanpo_DevNames")), cvarTemp, 0);
+		////VariantClear(&cvarTemp);
 
-		VariantInit(&varDevNames);
-		i = (int)wcstol(phDevNames, &str, 16);//十六进制  
-		V_VT(&varDevNames) = VT_UI4;
-		V_UI8(&varDevNames) = i;
-		_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCmd_DevNames")), varDevNames, 0);
-		VariantClear(&varDevNames);
+		//VariantInit(&varDevNames);
+		//i = (int)wcstol(phDevNames, &str, 16);//十六进制  
+		//V_VT(&varDevNames) = VT_UI4;
+		//V_UI8(&varDevNames) = i;
+		//_pHtmlEvent2->setAttribute(SysAllocString(_T("__IE_PrinterCmd_DevNames")), varDevNames, 0);
+		//VariantClear(&varDevNames);
 
 		delete[]szPrinter;
 		/*********************************************************************************/
@@ -777,46 +774,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		FreeLibrary(hinstMSHTML);
 
-		//HINSTANCE   hinstMSHTML = LoadLibrary(TEXT("MSHTML.DLL"));
-		//if (hinstMSHTML)
-		//{
-		//	SHOWHTMLDIALOGFN* pfnShowHTMLDialog;
-		//	pfnShowHTMLDialog = (SHOWHTMLDIALOGFN*)GetProcAddress(hinstMSHTML, "ShowHTMLDialog");
-		//	//void* p = GetProcAddress(hinstMSHTML, "navigate");
-		//	if (pfnShowHTMLDialog)
-		//	{
-		//		hr = (*pfnShowHTMLDialog)(hWndWebBrower, pURLMoniker, &varArgs, pOptions, &varReturn);
-		//		VariantClear(&varArgs);
-		//		pURLMoniker->Release();
-
-		//		if (SUCCEEDED(hr))
-		//		{
-		//			switch (varReturn.vt)
-		//			{
-		//			case VT_BSTR:
-		//			{
-		//				TCHAR szData[MAX_PATH];
-		//				wsprintf(szTemp, TEXT("The selected item was \"%s\"."), szData);
-		//				VariantClear(&varReturn);
-		//				break;
-		//			}
-		//			default:
-		//				lstrcpy(szTemp, TEXT("Cancel was selected."));
-		//				break;
-		//			}
-		//			MessageBox(NULL, szTemp, TEXT("HTML Dialog Sample"), MB_OK | MB_ICONINFORMATION);
-		//		}
-		//		else
-		//		{
-		//			MessageBox(NULL, TEXT("ShowHTMLDialog Failed."), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONERROR);
-
-		//		}
+		//TCHAR printerName[MAX_URL];
+		//if (!GetDefaultPrinterInfo(printerName)) {
+		//	MessageBox(NULL, _T("没有设置默认打印机"), _T("系统提示"), MB_OK);
+		//}
+		//else {
+		//	TCHAR printerSettingA[MAX_URL];
+		//	if (GetPrintSettingInfo(printerName, printerSettingA)) {
+		//		MessageBox(NULL, printerSettingA, _T("系统提示"), MB_OK);
 		//	}
-		//	FreeLibrary(hinstMSHTML);
+		//	else {
+		//		MessageBox(NULL, _T("获取打印机设置失败"), _T("系统提示"), MB_OK);
+		//	}
+		//	TCHAR printerSetting[MAX_URL];
+		//	GetWindowText(hWndEditPrinterSetOld, printerSetting, MAX_URL);
+		//	if (SetPrintSettingInfo(printerName, printerSetting)) {
+		//		MessageBox(NULL, printerSetting, _T("系统提示"), MB_OK);
+		//	}
+		//	else {
+		//		MessageBox(NULL, _T("设置打印机设置失败"), _T("系统提示"), MB_OK);
+		//	}
+		//	TCHAR printerSettingC[MAX_URL];
+		//	if (GetPrintSettingInfo(printerName, printerSettingC)) {
+		//		MessageBox(NULL, printerSettingC, _T("系统提示"), MB_OK);
+		//	}
+		//	else {
+		//		MessageBox(NULL, _T("获取打印机设置失败"), _T("系统提示"), MB_OK);
+		//	}
 		//}
 
-		//hr = ::ShowHTMLDialog(NULL, pURLMoniker, &varArgs, pOptions, &varReturn);
-		//hr = ShowHTMLDialog(NULL, pURLMoniker, NULL, pOptions, NULL);
 		if (hr != S_OK) {
 			MessageBox(NULL, _T("QueryInterface IID_IHTMLEventObj2 失败"), TEXT("HTML Dialog Sample"), MB_OK | MB_ICONINFORMATION);
 		}

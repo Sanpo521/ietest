@@ -133,6 +133,7 @@
   <ItemGroup>
     <ClCompile Include="CreateTempFile.cpp" />
     <ClCompile Include="DebugInfoPrint.cpp" />
+    <ClCompile Include="IEPageSetup.cpp" />
     <ClCompile Include="lib_json\json_reader.cpp" />
     <ClCompile Include="lib_json\json_value.cpp" />
     <ClCompile Include="lib_json\json_writer.cpp" />
@@ -150,17 +151,20 @@
     <ClCompile Include="TestMshtml05.cpp" />
     <ClCompile Include="TestMshtml06.cpp" />
     <ClCompile Include="TestMshtml07.cpp" />
+    <ClCompile Include="UnitConversionUtil.cpp" />
     <ClCompile Include="WebBrowser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CreateTempFile.h" />
     <ClInclude Include="DebugInfoPrint.h" />
+    <ClInclude Include="IEPageSetup.h" />
     <ClInclude Include="lib_json\json_batchallocator.h" />
     <ClInclude Include="Printer.h" />
     <ClInclude Include="PrintUtil.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringUtil.h" />
+    <ClInclude Include="UnitConversionUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ietest.rc" />

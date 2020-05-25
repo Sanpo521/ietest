@@ -51,21 +51,11 @@
 //2、属性	3
 //defaultPrinterName	3
 //
-//
-//
 //pageFrom	6
 //pageTo	6
 //selectedPages	6
 //currentPage	7
-//header	4
-//footer	5
-//marginTop	3
-//marginLeft	3
-//marginRight	4
-//marginBottom	4
 //zoomValue	8
-//
-//
 //
 //3、方法	9
 //InitPrint()	9
@@ -84,9 +74,6 @@ Author	    :	Sanpo
 Date	    :	2020-05-18
 Description :	打印工具类（包含取得默认打印机、获取打印机设置、修改打印机设置等
 ******************************************************************************************/
-
-//打印设置JSON串最大长度
-#define MAX_URL					1000
 
 /******************************************************************************************
 Name	            :	GetDefaultPrinterInfo
@@ -168,17 +155,17 @@ BOOL GetPrintSettingInfo(TCHAR* pszPrinterName, TCHAR* pszPrintSetting) {
 	}
 	Json::Value jsonRoot; //定义根节点
 	Json::Value jsonItem; //定义一个子对象
-	jsonRoot["paperSize"] = pDevMode->dmPaperSize; //添加数据
-	jsonRoot["paperHeight"] = pDevMode->dmPaperLength;
-	jsonRoot["paperWidth"] = pDevMode->dmPaperWidth;
-	jsonRoot["orientation"] = pDevMode->dmOrientation;
-	jsonRoot["copies"] = pDevMode->dmCopies;
-	jsonRoot["paperSource"] = pDevMode->dmDefaultSource;
+	jsonRoot["paperSize"] = Json::Value(pDevMode->dmPaperSize); //添加数据
+	jsonRoot["paperHeight"] = Json::Value(pDevMode->dmPaperLength);
+	jsonRoot["paperWidth"] = Json::Value(pDevMode->dmPaperWidth);
+	jsonRoot["orientation"] = Json::Value(pDevMode->dmOrientation);
+	jsonRoot["copies"] = Json::Value(pDevMode->dmCopies);
+	jsonRoot["paperSource"] = Json::Value(pDevMode->dmDefaultSource);
 
 	std::wstring wszDest;
 	StringToWstring(wszDest, jsonRoot.toStyledString());
 	const wchar_t* pwidstr = wszDest.c_str();
-	_tcscpy_s(pszPrintSetting, MAX_URL, pwidstr);
+	_tcscpy_s(pszPrintSetting, MAX_JSON, pwidstr);
 	if (hPrinter) {
 		::ClosePrinter(hPrinter);
 	}
@@ -303,52 +290,62 @@ BOOL SetPrintSettingInfo(TCHAR* pszPrinterName, TCHAR* pszPrintSetting) {
 	bool isChange = false;
 	//根据驱动程序报告判断要修改的属性支持不支持更改
 	//如果支持，则更改的内容
-	if (pi2->pDevMode->dmFields & DM_PAPERSIZE)
-	{
-		pi2->pDevMode->dmFields = DM_PAPERSIZE;
-		pi2->pDevMode->dmPaperSize = root["paperSize"].asInt();
-		isChange = true;
-		if (pi2->pDevMode->dmPaperSize == DMPAPER_USER) {
-			if (pi2->pDevMode->dmFields & DM_PAPERLENGTH)
-			{
-				pi2->pDevMode->dmFields = DM_PAPERLENGTH;
-				pi2->pDevMode->dmPaperLength = root["paperHeight"].asInt();
-				isChange = true;
-			}
-			else {
-				OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support paperHeight"));
-			}
-			if (pi2->pDevMode->dmFields & DM_PAPERWIDTH)
-			{
-				pi2->pDevMode->dmFields = DM_PAPERWIDTH;
-				pi2->pDevMode->dmPaperWidth = root["paperWidth"].asInt();
-				isChange = true;
-			}
-			else {
-				OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support paperWidth"));
+	if (!root["paperSize"].isNull()) {
+		if (pi2->pDevMode->dmFields & DM_PAPERSIZE)
+		{
+			pi2->pDevMode->dmFields = pi2->pDevMode->dmFields | DM_PAPERSIZE;
+			pi2->pDevMode->dmPaperSize = root["paperSize"].asInt();
+			isChange = true;
+			if (pi2->pDevMode->dmPaperSize == DMPAPER_USER) {
+				if (!root["paperHeight"].isNull()) {
+					if (pi2->pDevMode->dmFields & DM_PAPERLENGTH)
+					{
+						pi2->pDevMode->dmFields = pi2->pDevMode->dmFields | DM_PAPERLENGTH;
+						pi2->pDevMode->dmPaperLength = root["paperHeight"].asInt();
+						isChange = true;
+					}
+					else {
+						OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support paperHeight"));
+					}
+				}
+				if (!root["paperWidth"].isNull()) {
+					if (pi2->pDevMode->dmFields & DM_PAPERWIDTH)
+					{
+						pi2->pDevMode->dmFields = pi2->pDevMode->dmFields | DM_PAPERWIDTH;
+						pi2->pDevMode->dmPaperWidth = root["paperWidth"].asInt();
+						isChange = true;
+					}
+					else {
+						OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support paperWidth"));
+					}
+				}
 			}
 		}
+		else {
+			OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support paperSize"));
+		}
 	}
-	else {
-		OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support paperSize"));
+	if (!root["orientation"].isNull()) {
+		if (pi2->pDevMode->dmFields & DM_ORIENTATION)
+		{
+			pi2->pDevMode->dmFields = pi2->pDevMode->dmFields | DM_ORIENTATION;
+			pi2->pDevMode->dmOrientation = root["orientation"].asInt();
+			isChange = true;
+		}
+		else {
+			OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support Orientation"));
+		}
 	}
-	if (pi2->pDevMode->dmFields & DM_ORIENTATION)
-	{
-		pi2->pDevMode->dmFields = DM_ORIENTATION;
-		pi2->pDevMode->dmOrientation = root["orientation"].asInt();
-		isChange = true;
-	}
-	else {
-		OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support Orientation"));
-	}
-	if (pi2->pDevMode->dmFields & DM_COPIES)
-	{
-		pi2->pDevMode->dmFields = DM_COPIES;
-		pi2->pDevMode->dmCopies = root["copies"].asInt();
-		isChange = true;
-	}
-	else {
-		OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support copies"));
+	if (!root["copies"].isNull()) {
+		if (pi2->pDevMode->dmFields & DM_COPIES)
+		{
+			pi2->pDevMode->dmFields = pi2->pDevMode->dmFields | DM_COPIES;
+			pi2->pDevMode->dmCopies = root["copies"].asInt();
+			isChange = true;
+		}
+		else {
+			OutputDebugPrintf(_T("[SanpoWebPrintWS] Printer doesn't support copies"));
+		}
 	}
 
 	if (!isChange) {

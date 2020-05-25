@@ -301,9 +301,6 @@
 			document.body.onkeydown = OnKeyDown;
 		}
         function OnLoadBody() {
-			//alert(dialogArguments.Sanpo_DevMode);
-            alert(dialogArguments.__IE_PrinterCmd_DevMode);
-            alert(dialogArguments.__IE_PrinterCmd_DevNames);
 			g_fRTL = (document.body.currentStyle.direction.toLowerCase() == "rtl");
 			g_fPreview = dialogArguments.__IE_PrintType
 			if (UnprintableURL(dialogArguments.__IE_ContentDocumentUrl)) {
@@ -668,7 +665,6 @@
 		function EnsureDocuments() {
 			var i;
 			var tmp;
-            alert(Printer.marginTop);
 			var top = Math.max(Printer.marginTop / 100, 0);
 			var bottom = Math.max(Printer.marginBottom / 100, 0);
 			var left = Math.max(Printer.marginLeft / 100, 0);
@@ -1332,11 +1328,7 @@
 			}
 		}
 		function CPrintDoc_InitDocument(fUseStreamHeader) {
-			alert(fUseStreamHeader);
-            alert(dialogArguments.__IE_OutlookHeader != null);
             var fReallyUseStreamHeader = (fUseStreamHeader && (dialogArguments.__IE_OutlookHeader != null) && (dialogArguments.__IE_OutlookHeader != ""));
-            alert(fReallyUseStreamHeader);
-            alert((fReallyUseStreamHeader) ? 1 : 0);
 			this._anMerge[1] = (fReallyUseStreamHeader) ? 1 : 0;
 			this._nStatus = (fReallyUseStreamHeader) ? 0 : 1;
 			this.AddFirstPage();
